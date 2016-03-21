@@ -1,0 +1,30 @@
+{
+  "name": "react-document-events",
+  "version": "1.0.0",
+  "description": "Declarative component for binding handlers to document and window - and cleaning them up.",
+  "main": "index.js",
+  "scripts": {
+    "prepublish": "npm test",
+    "test": "mocha",
+    "test:watch": "mocha --watch",
+    "test:cov": "isparta cover ./node_modules/.bin/_mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/STRML/react-document-events.git"
+  },
+  "author": "Samuel Reed <samuel.trace.reed@gmail.com> (http://strml.net/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/STRML/react-document-events/issues"
+  },
+  "homepage": "https://github.com/STRML/react-document-events#readme",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "eslint": "^2.4.0",
+    "jsdom": "^8.1.0",
+    "mocha": "^2.4.5",
+    "react": "^0.14.7",
+    "react-dom": "^0.14.7"
+  }
+}
