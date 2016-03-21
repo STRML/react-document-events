@@ -20,7 +20,7 @@ DummyTarget.prototype.removeEventListener = function(name) {
 
 var DummyComponent = React.createClass({
   getDefaultProps: function() {
-    return {enabled: true}
+    return {enabled: true};
   },
   render: function() {
     return React.createElement('div', {},
@@ -49,7 +49,33 @@ var ParentComponent = React.createClass({
 
 describe('react-document-events', function () {
 
-  describe('attaching to target', function () {
+  describe('Server rendering', function () {
+
+    var originalWindow = global.window;
+    var originalDocument = global.document;
+
+    beforeEach(function () {
+      // Remove window/document so we can be sure this works properly
+      global.window = undefined;
+      global.document = undefined;
+    });
+
+    afterEach(function () {
+      global.window = originalWindow;
+      global.document = originalDocument;
+    });
+
+    it('should not assign a listener when rendering to string', function () {
+      var target = new DummyTarget();
+      var str = ReactDOMServer.renderToStaticMarkup(React.createElement(DummyComponent, {
+        target: target
+      }));
+      expect(str).to.equal('<div><div>Title</div><noscript></noscript></div>');
+      expect(target._events).to.deep.equal({});
+    });
+  });
+
+  describe('DOM tests', function() {
 
     var originalWindow = global.window;
     var originalDocument = global.document;
@@ -70,20 +96,22 @@ describe('react-document-events', function () {
       global.document = originalDocument;
     });
 
-    it('should not assign a listener when rendering to string', function () {
-      var target = new DummyTarget();
-      var str = ReactDOMServer.renderToStaticMarkup(React.createElement(DummyComponent, {
-        target: target
-      }));
-      expect(str).to.equal('<div><div>Title</div><noscript></noscript></div>');
-      expect(target._events).to.deep.equal({});
-    });
-
     it('should assign a listener when mounted', function () {
       var target = new DummyTarget();
       var container = document.createElement('div');
       ReactDOM.render(React.createElement(DummyComponent, {
         target: target
+      }), container);
+      expect(target._events).to.deep.equal({click: 1});
+      ReactDOM.unmountComponentAtNode(container);
+      expect(target._events).to.deep.equal({click: 0});
+    });
+
+    it('should assign a listener to a target returned by a function', function () {
+      var target = new DummyTarget();
+      var container = document.createElement('div');
+      ReactDOM.render(React.createElement(DummyComponent, {
+        target: function() { return target; }
       }), container);
       expect(target._events).to.deep.equal({click: 1});
       ReactDOM.unmountComponentAtNode(container);
