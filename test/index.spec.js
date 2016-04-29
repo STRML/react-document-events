@@ -1,5 +1,5 @@
 'use strict';
-
+/*eslint no-console: 0*/
 var ReactDocumentEvents = require('../index');
 var expect = require('chai').expect;
 var React = require('react');
@@ -75,7 +75,7 @@ describe('react-document-events', function () {
     });
   });
 
-  describe('DOM tests', function() {
+  describe('DOM tests', function () {
 
     var originalWindow = global.window;
     var originalDocument = global.document;
@@ -135,5 +135,42 @@ describe('react-document-events', function () {
       // Expected another 'removeListener' call - this is okay, it's a noop
       expect(target._events).to.deep.equal({click: -1});
     });
+
+    it('Should warn when attaching window events to document', function () {
+      var container = document.createElement('div');
+      var BadComponent = React.createClass({
+        render: function() {
+          return React.createElement(ReactDocumentEvents, {
+            target: document,
+            onResize: function(){}
+          });
+        }
+      });
+      var _warn = console.warn;
+      var called = false;
+      console.warn = function() { called = true; };
+      ReactDOM.render(React.createElement(BadComponent), container);
+      expect(called).to.equal(true);
+      console.warn = _warn;
+    });
+
+    it('Should not warn when attaching window events to window', function () {
+      var container = document.createElement('div');
+      var GoodComponent = React.createClass({
+        render: function() {
+          return React.createElement(ReactDocumentEvents, {
+            target: window,
+            onResize: function(){}
+          });
+        }
+      });
+      var _warn = console.warn;
+      var called = false;
+      console.warn = function() { called = true; };
+      ReactDOM.render(React.createElement(GoodComponent), container);
+      expect(called).to.equal(false);
+      console.warn = _warn;
+    });
   });
+
 });
