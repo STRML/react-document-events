@@ -27,7 +27,7 @@
   "devDependencies": {
     "babel-cli": "^6.24.1",
     "babel-eslint": "^7.2.1",
-    "babel-plugin-transform-es2015-classes": "^6.24.1",
+    "babel-preset-es2015": "^6.24.1",
     "chai": "^3.5.0",
     "eslint": "^3.19.0",
     "jsdom": "^9.12.0",
@@ -35,6 +35,10 @@
     "pre-commit": "^1.2.2",
     "react": "^15.5.1",
     "react-dom": "^15.5.1"
+  },
+  "peerDependencies": {
+    "react": ">0.14",
+    "react-dom": ">0.14"
   },
   "pre-commit": [
     "test",
