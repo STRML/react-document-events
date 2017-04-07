@@ -1,6 +1,6 @@
 {
   "name": "react-document-events",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Declarative component for binding handlers to document and window - and cleaning them up.",
   "main": "index.js",
   "engines": {
