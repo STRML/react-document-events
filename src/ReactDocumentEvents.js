@@ -40,6 +40,15 @@ class DocumentEvents extends React.Component {
     });
   }
 
+  getTarget() {
+    const props = this.props;
+    let target = typeof props.target === 'function' ? props.target() : props.target;
+    // Ensure that, by default, we get the ownerDocument of our render target
+    // Useful if we render into <iframe>s or new windows.
+    if (!target) target = this.node && this.node.ownerDocument;
+    return target;
+  }
+
   bindHandlers() {
     this._adjustHandlers(on);
   }
@@ -50,7 +59,7 @@ class DocumentEvents extends React.Component {
 
   _adjustHandlers(fn) {
     const props = this.props;
-    let target = typeof props.target === 'function' ? props.target() : props.target;
+    const target = this.getTarget();
     if (!target) return;
     // If `passive` is not supported, the third param is `useCapture`, which is a bool - and we won't
     // be able to use passive at all. Otherwise, it's safe to use an object.
@@ -61,7 +70,10 @@ class DocumentEvents extends React.Component {
   }
 
   render() {
-    return null;
+    if (this.props.target) return null;
+
+    // If no target, we'll have to render an el to figure out which document we're in.
+    return <noscript ref={(c) => {this.node = c;}} />;
   }
 }
 
@@ -71,7 +83,6 @@ DocumentEvents.defaultProps = {
   capture: false,
   enabled: true,
   passive: false,
-  target: process.browser ? document : null
 };
 
 function on(element, event, callback, options) {

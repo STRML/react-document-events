@@ -5,7 +5,7 @@ const expect = require('chai').expect;
 const React = require('react');
 const ReactDOM = require('react-dom');
 const ReactDOMServer = require('react-dom/server');
-const jsdom = require('jsdom');
+const {JSDOM} = require('jsdom');
 
 const DummyTarget = function() {
   this._events = {};
@@ -19,13 +19,17 @@ DummyTarget.prototype.removeEventListener = function(name) {
 };
 
 class DummyComponent extends React.Component{
+  getDocumentEvents() {
+    return this.docRef;
+  }
   render() {
     return React.createElement('div', {},
       React.createElement('div', {}, 'Title'),
       React.createElement(ReactDocumentEvents, {
         enabled: this.props.enabled,
         target: this.props.target,
-        onClick(e) {}
+        onClick(e) {},
+        ref: (c) => { this.docRef = c; }
       })
     );
   }
@@ -79,15 +83,10 @@ describe('react-document-events', function () {
     const originalWindow = global.window;
     const originalDocument = global.document;
 
-    beforeEach(function (done) {
-      jsdom.env('<!doctype html><html><head></head><body></body></html>', function (error, window) {
-        if (!error) {
-          global.window = window;
-          global.document = window.document;
-        }
-
-        done(error);
-      });
+    beforeEach(function () {
+      const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>');
+      global.window = dom.window;
+      global.document = dom.window.document;
     });
 
     afterEach(function () {
@@ -169,6 +168,46 @@ describe('react-document-events', function () {
       ReactDOM.render(React.createElement(GoodComponent), container);
       expect(called).to.equal(false);
       console.warn = _warn;
+    });
+
+    it('Should automatically set `target`', function () {
+      const renderedComponent = ReactDOM.render(
+        <DummyComponent />, document.createElement('div')
+      );
+      const docEvents = renderedComponent.getDocumentEvents();
+      expect(docEvents.getTarget()).to.equal(global.document);
+    });
+
+    it('Should automatically get correct `target` in a new window', function () {
+      const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>');
+      class WindowHoister extends React.Component {
+        constructor() {
+          super();
+          this.state = {mounted: false};
+        }
+        componentDidMount() {
+          this.setState({mounted: true});
+        }
+        componentWillUpdate(nextProps, nextState) {
+          if (!this.state.mounted && nextState.mounted) this.openChild();
+        }
+        openChild() {
+          this.containerEl = document.createElement('div');
+          dom.window.document.body.appendChild(this.containerEl);
+        }
+        render() {
+          if (!this.state.mounted) return null;
+          return ReactDOM.createPortal(this.props.children, this.containerEl);
+        }
+      }
+
+      let renderedComponent;
+      ReactDOM.render(
+        <WindowHoister><DummyComponent ref={(c) => { renderedComponent = c; }}/></WindowHoister>,
+        document.createElement('div')
+      );
+      const docEvents = renderedComponent.getDocumentEvents();
+      expect(docEvents.getTarget()).to.equal(dom.window.document);
     });
   });
 
