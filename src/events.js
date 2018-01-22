@@ -1,7 +1,7 @@
 // Generated from:
 // var SimpleEventPlugin = require('react/lib/SimpleEventPlugin')
 // Object.keys(SimpleEventPlugin.eventTypes).map(function(key) { return 'on' + key[0].toUpperCase() + key.slice(1); });
-var reactEvents = [
+const reactEvents = [
   'onAbort',
   'onAnimationEnd',
   'onAnimationIteration',
@@ -68,7 +68,7 @@ var reactEvents = [
 
 // Events that are specific to the window and aren't in the list above
 // Added addl events from https://developer.mozilla.org/en-US/docs/Web/API/Window
-var windowEvents = [
+const windowEvents = [
   'onAfterPrint',
   'onBeforePrint',
   'onBeforeUnload',
@@ -89,7 +89,7 @@ var windowEvents = [
 ];
 
 // Addl document/window APIs
-var extraEvents = [
+const extraEvents = [
   // IE/FF pointer events spec
   'onPointerCancel',
   'onPointerDown',

@@ -1,8 +1,8 @@
 'use strict';
-var React = require('react');
-var PropTypes = require('prop-types');
-var NODE_ENV = process.env.NODE_ENV;
-var EventKeys = {};
+const React = require('react');
+const PropTypes = require('prop-types');
+const NODE_ENV = process.env.NODE_ENV;
+let EventKeys = {};
 if (NODE_ENV !== 'production') {
   // Gated behind flag so bundlers can strip the import
   EventKeys = require('./events');  // arrays of event names
@@ -28,7 +28,7 @@ class DocumentEvents extends React.Component {
   }
 
   getKeys() {
-    var isWindow = this.props.target === window;
+    const isWindow = this.props.target === window;
     return Object.keys(this.props)
     .filter(function(k) { return k.slice(0, 2) === 'on'; })
     .map(function(k) {
@@ -49,12 +49,12 @@ class DocumentEvents extends React.Component {
   }
 
   _adjustHandlers(fn) {
-    var props = this.props;
-    var target = typeof props.target === 'function' ? props.target() : props.target;
+    const props = this.props;
+    let target = typeof props.target === 'function' ? props.target() : props.target;
     if (!target) return;
     // If `passive` is not supported, the third param is `useCapture`, which is a bool - and we won't
     // be able to use passive at all. Otherwise, it's safe to use an object.
-    var options = SUPPORTS_PASSIVE ? {passive: props.passive, capture: props.capture} : props.capture;
+    const options = SUPPORTS_PASSIVE ? {passive: props.passive, capture: props.capture} : props.capture;
     this.getKeys().forEach(function(keyArr) {
       fn(target, keyArr[1], props[keyArr[0]], options);
     });
@@ -86,9 +86,9 @@ function off(element, event, callback, options) {
   return callback;
 }
 
-var SUPPORTS_PASSIVE = (function passiveFeatureTest() {
+const SUPPORTS_PASSIVE = (function passiveFeatureTest() {
   try {
-    var support = false;
+    let support = false;
     document.createElement("div").addEventListener("test", function() {}, { get passive() { support = true; }});
     return support;
   } catch (e) {
@@ -98,7 +98,7 @@ var SUPPORTS_PASSIVE = (function passiveFeatureTest() {
 
 // Generate and assign propTypes from all possible events
 if (NODE_ENV !== 'production') {
-  var propTypes = EventKeys.allEvents.reduce(function(result, key) {
+  const propTypes = EventKeys.allEvents.reduce(function(result, key) {
     result[key] = PropTypes.func;
     return result;
   }, {});
