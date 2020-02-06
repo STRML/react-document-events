@@ -1,6 +1,7 @@
 'use strict';
 const React = require('react');
 const PropTypes = require('prop-types');
+const shallowequal = require('shallowequal');
 const NODE_ENV = process.env.NODE_ENV;
 let EventKeys = {};
 if (NODE_ENV !== 'production') {
@@ -11,27 +12,36 @@ if (NODE_ENV !== 'production') {
 class DocumentEvents extends React.Component {
   // propTypes are generated below from all possible events
 
+  constructor(props) {
+    super(props);
+    this._allHandlers = {};
+  }
+
   componentDidMount() {
-    if (this.props.enabled) this.bindHandlers();
+    if (this.props.enabled) this.bindHandlers(this.props);
   }
 
   componentWillUnmount() {
-    this.unbindHandlers();
+    this.unbindHandlers(this.props);
   }
 
   componentWillReceiveProps(nextProps) {
-    if (this.props.enabled && !nextProps.enabled) {
-      this.unbindHandlers();
+    if (!shallowequal(Object.keys(this.props).sort(), Object.keys(nextProps).sort())) {
+      this.unbindHandlers(this.props);
+      this.bindHandlers(nextProps);
+    } else if (this.props.enabled && !nextProps.enabled) {
+      this.unbindHandlers(this.props);
     } else if (!this.props.enabled && nextProps.enabled) {
-      this.bindHandlers();
+      this.bindHandlers(nextProps);
     }
   }
 
-  getKeys() {
-    const isWindow = this.props.target === window;
-    return Object.keys(this.props)
-    .filter(function(k) { return k.slice(0, 2) === 'on'; })
-    .map(function(k) {
+  getKeys(props) {
+    props = props || this.props;
+    const isWindow = props.target === window;
+    return Object.keys(props)
+    .filter((k) => { return k.slice(0, 2) === 'on'; })
+    .map((k) => {
       if (NODE_ENV !== 'production' && EventKeys.windowEvents.indexOf(k) !== -1 && !isWindow) {
         // eslint-disable-next-line
         console.warn("You attached the handler " + k + ", but this handler is only valid on the Window object.");
@@ -40,8 +50,8 @@ class DocumentEvents extends React.Component {
     });
   }
 
-  getTarget() {
-    const props = this.props;
+  getTarget(props) {
+    props = props || this.props;
     let target = typeof props.target === 'function' ? props.target() : props.target;
     // Ensure that, by default, we get the ownerDocument of our render target
     // Useful if we render into <iframe>s or new windows.
@@ -49,23 +59,24 @@ class DocumentEvents extends React.Component {
     return target;
   }
 
-  bindHandlers() {
-    this._adjustHandlers(on);
+  bindHandlers(props) {
+    this._adjustHandlers(on, props);
   }
 
-  unbindHandlers() {
-    this._adjustHandlers(off);
+  unbindHandlers(props) {
+    this._adjustHandlers(off, props);
   }
 
-  _adjustHandlers(fn) {
-    const props = this.props;
-    const target = this.getTarget();
+  _adjustHandlers(fn, props) {
+    const target = this.getTarget(props);
     if (!target) return;
     // If `passive` is not supported, the third param is `useCapture`, which is a bool - and we won't
     // be able to use passive at all. Otherwise, it's safe to use an object.
     const options = SUPPORTS_PASSIVE ? {passive: props.passive, capture: props.capture} : props.capture;
-    this.getKeys().forEach(function(keyArr) {
-      fn(target, keyArr[1], props[keyArr[0]], options);
+    this.getKeys(props).forEach((keyArr) => {
+      const handler = this._allHandlers[keyArr[0]] || ((event) => this.props[keyArr[0]](event));
+      this._allHandlers[keyArr[0]] = handler;
+      fn(target, keyArr[1], handler, options);
     });
   }
 
