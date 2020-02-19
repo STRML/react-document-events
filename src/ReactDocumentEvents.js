@@ -9,6 +9,12 @@ if (NODE_ENV !== 'production') {
 }
 
 class DocumentEvents extends React.Component {
+  static displayName = 'DocumentEvents';
+  static defaultProps = {
+    capture: false,
+    enabled: true,
+    passive: false,
+  };
 
   // propTypes are generated at bottom of file from all possible events
   componentDidMount() {
@@ -33,11 +39,14 @@ class DocumentEvents extends React.Component {
     }
   }
 
+  // Returns an array of event names created from event handler names.
+  // For example, `onMouseOver` becomes `['onMouseOver', 'mouseover']`
   getKeys(props) {
     props = props || this.props;
     const isWindow = props.target === window;
+
     return Object.keys(props)
-    .filter((k) => { return k.slice(0, 2) === 'on'; })
+    .filter((k) => k.slice(0, 2) === 'on')
     .map((k) => {
       if (NODE_ENV !== 'production' && EventKeys.windowEvents.indexOf(k) !== -1 && !isWindow) {
         // eslint-disable-next-line
@@ -47,6 +56,7 @@ class DocumentEvents extends React.Component {
     });
   }
 
+  // Returns the target we're meant to attach events to.
   getTarget(props) {
     props = props || this.props;
     let target = typeof props.target === 'function' ? props.target() : props.target;
@@ -71,9 +81,13 @@ class DocumentEvents extends React.Component {
     // be able to use passive at all. Otherwise, it's safe to use an object.
     // eslint-disable-next-line no-use-before-define
     const options = SUPPORTS_PASSIVE ? {passive: props.passive, capture: props.capture} : props.capture;
-    this.getKeys(props).forEach((keyArr) => {
-      const handler = ((event) => this.props[keyArr[0]](event));
-      fn(target, keyArr[1], handler, options);
+    this.getKeys(props).forEach(([eventHandlerName, eventName]) => {
+      // Note that this is a function that looks up the latest handler on `this.props`.
+      // This ensures that if the function in `props` changes, the most recent handler will
+      // still be called.
+      // Intentional that we're calling on `this.props` and not on `props.`
+      const handler = ((event) => this.props[eventHandlerName](event));
+      fn(target, eventName, handler, options);
     });
   }
 
@@ -84,14 +98,6 @@ class DocumentEvents extends React.Component {
     return <noscript ref={(c) => {this.node = c;}} />;
   }
 }
-
-DocumentEvents.displayName = 'DocumentEvents';
-
-DocumentEvents.defaultProps = {
-  capture: false,
-  enabled: true,
-  passive: false,
-};
 
 function on(element, event, callback, options) {
   !element.addEventListener && (event = 'on' + event);
