@@ -1,3 +1,13 @@
+## 1.5.0 (Feb 19, 2020)
+
+- Fixed an issue where changing the callback on `props` would not result in that new callback being called.
+  - Rather than set the callback directly, we now set a function of the form `(event) => this.props[eventHandlerName](event)`.
+  - This fixes compatibility with hooks.
+  - Thanks @davidswinegar
+- Fixed an issue where adding a new event handler would not cause a rebind. Thanks again, @davidswinegar
+- Removed React 16.4 deprecated lifecycles.
+- Upgraded to babel 7.
+
 ## 1.4.0 (Jan 22, 2018)
 
 - Dynamically get `target` prop, if not specified, by introspecting the parent of the render target.
