@@ -24,10 +24,7 @@ DummyTarget.prototype.removeEventListener = function(name) {
 };
 
 class DummyComponent extends React.Component {
-  constructor(props) {
-    super(props);
-    this.renderCount = 0;
-  }
+  renderCount = 0;
   getDocumentEvents() {
     return this.docRef;
   }
@@ -195,15 +192,10 @@ describe('react-document-events', function () {
     it('Should automatically get correct `target` in a new window', function () {
       const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>');
       class WindowHoister extends React.Component {
-        constructor() {
-          super();
-          this.state = {mounted: false};
-        }
+        state = {mounted: false};
         componentDidMount() {
+          this.openChild();
           this.setState({mounted: true});
-        }
-        componentWillUpdate(nextProps, nextState) {
-          if (!this.state.mounted && nextState.mounted) this.openChild();
         }
         openChild() {
           this.containerEl = document.createElement('div');
