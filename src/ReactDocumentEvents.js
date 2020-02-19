@@ -114,6 +114,7 @@ function off(element, event, callback, options) {
 const SUPPORTS_PASSIVE = (function passiveFeatureTest() {
   try {
     let support = false;
+    // eslint-disable-next-line getter-return
     document.createElement("div").addEventListener("test", function() {}, { get passive() { support = true; }});
     return support;
   } catch (e) {
