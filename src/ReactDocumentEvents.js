@@ -1,8 +1,7 @@
 'use strict';
 const React = require('react');
 const PropTypes = require('prop-types');
-const shallowequal = require('shallowequal');
-const NODE_ENV = process.env.NODE_ENV;
+const {NODE_ENV} = process.env;
 let EventKeys = {};
 if (NODE_ENV !== 'production') {
   // Gated behind flag so bundlers can strip the import
@@ -10,13 +9,8 @@ if (NODE_ENV !== 'production') {
 }
 
 class DocumentEvents extends React.Component {
-  // propTypes are generated below from all possible events
 
-  constructor(props) {
-    super(props);
-    this._allHandlers = {};
-  }
-
+  // propTypes are generated at bottom of file from all possible events
   componentDidMount() {
     if (this.props.enabled) this.bindHandlers(this.props);
   }
@@ -25,14 +19,17 @@ class DocumentEvents extends React.Component {
     this.unbindHandlers(this.props);
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (!shallowequal(Object.keys(this.props).sort(), Object.keys(nextProps).sort())) {
-      this.unbindHandlers(this.props);
-      this.bindHandlers(nextProps);
-    } else if (this.props.enabled && !nextProps.enabled) {
-      this.unbindHandlers(this.props);
-    } else if (!this.props.enabled && nextProps.enabled) {
-      this.bindHandlers(nextProps);
+  componentDidUpdate(prevProps) {
+    if (Object.keys(this.props).sort().toString() !== Object.keys(prevProps).sort().toString()) {
+      // Handlers passed in likely changed. Rebind.
+      this.unbindHandlers(prevProps);
+      this.bindHandlers(this.props);
+    } else if (!prevProps.enabled && this.props.enabled) {
+      // We became enabled
+      this.bindHandlers(this.props);
+    } else if (prevProps.enabled && !this.props.enabled) {
+      // We became disabled
+      this.unbindHandlers(prevProps);
     }
   }
 
@@ -72,10 +69,10 @@ class DocumentEvents extends React.Component {
     if (!target) return;
     // If `passive` is not supported, the third param is `useCapture`, which is a bool - and we won't
     // be able to use passive at all. Otherwise, it's safe to use an object.
+    // eslint-disable-next-line no-use-before-define
     const options = SUPPORTS_PASSIVE ? {passive: props.passive, capture: props.capture} : props.capture;
     this.getKeys(props).forEach((keyArr) => {
-      const handler = this._allHandlers[keyArr[0]] || ((event) => this.props[keyArr[0]](event));
-      this._allHandlers[keyArr[0]] = handler;
+      const handler = ((event) => this.props[keyArr[0]](event));
       fn(target, keyArr[1], handler, options);
     });
   }

@@ -236,6 +236,8 @@ describe('react-document-events', function () {
       target.eventListeners.click();
       expect(correctOnClickHandlerCalled).to.equal(false);
 
+      // This doesn't look like a rerender of the same component, but it is - key hasn't changed so it's
+      // not a full remount
       const component = ReactDOM.render(<DummyComponent target={target} onClick={secondOnClick} />, container);
       target.eventListeners.click();
       expect(component.renderCount).to.equal(2);
