@@ -12,7 +12,9 @@
     "test:watch": "mocha --watch --require @babel/register",
     "test:cov": "isparta cover ./node_modules/.bin/_mocha",
     "lint": "eslint src/",
-    "build": "bash build.sh"
+    "build": "bash build.sh",
+    "preversion": "yarn test && git add CHANGELOG.md",
+    "postversion": "git push --tags && yarn publish . --tag $npm_package_version && git push && echo \"Successfully released version $npm_package_version!\""
   },
   "repository": {
     "type": "git",
