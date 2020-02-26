@@ -16,6 +16,10 @@ class DocumentEvents extends React.Component {
     passive: false,
   };
 
+  // Handler storage. Required so we can maintain a constant reference
+  // and properly unbind handlers.
+  _allHandlers = {};
+
   // propTypes are generated at bottom of file from all possible events
   componentDidMount() {
     if (this.props.enabled) this.bindHandlers(this.props);
@@ -84,9 +88,12 @@ class DocumentEvents extends React.Component {
     this.getKeys(props).forEach(([eventHandlerName, eventName]) => {
       // Note that this is a function that looks up the latest handler on `this.props`.
       // This ensures that if the function in `props` changes, the most recent handler will
-      // still be called.
-      // Intentional that we're calling on `this.props` and not on `props.`
-      const handler = ((event) => this.props[eventHandlerName](event));
+      // still be called, so it's intentional that we're calling on `this.props` and not on `props`.
+
+      // Storage in _allHandlers ensures that when we call unbindHandlers(), the handler is
+      // properly removed.
+      const handler = this._allHandlers[eventHandlerName] || ((event) => this.props[eventHandlerName](event));
+      this._allHandlers[eventHandlerName] = handler;
       fn(target, eventName, handler, options);
     });
   }

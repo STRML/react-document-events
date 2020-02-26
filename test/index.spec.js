@@ -18,7 +18,8 @@ DummyTarget.prototype.addEventListener = function(name, callback) {
   this.eventListenerCount[name]++;
   this.eventListeners[name] = callback;
 };
-DummyTarget.prototype.removeEventListener = function(name) {
+DummyTarget.prototype.removeEventListener = function(name, callback) {
+  if (this.eventListeners[name] !== callback) return;
   this.eventListenerCount[name]--;
   delete this.eventListeners[name];
 };
@@ -141,8 +142,9 @@ describe('react-document-events', function () {
       component.setState({enabled: false});
       expect(target.eventListenerCount).to.deep.equal({click: 0});
       ReactDOM.unmountComponentAtNode(container);
-      // Expected another 'removeListener' call - this is okay, it's a noop
-      expect(target.eventListenerCount).to.deep.equal({click: -1});
+      // Expected another 'removeListener' call - this is okay, it's a noop.
+      // Count should equal 0 because the function is gone.
+      expect(target.eventListenerCount).to.deep.equal({click: 0});
     });
 
     it('Should warn when attaching window events to document', function () {
