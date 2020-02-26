@@ -1,3 +1,9 @@
+## 1.5.1 (Feb 26, 2020)
+
+> This release contains a critical bugfix. 1.5.0 has been unpublished.
+
+- Fixed an issue where handlers were not being unbound properly on dismount or disable.
+
 ## 1.5.0 (Feb 19, 2020)
 
 - Fixed an issue where changing the callback on `props` would not result in that new callback being called.
