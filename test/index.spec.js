@@ -11,18 +11,42 @@ const {act} = require('react');
 const DummyTarget = function() {
   this.eventListenerCount = {};
   this.eventListeners = {};
+  this.eventListenerOptions = {};
 };
-DummyTarget.prototype.addEventListener = function(name, callback) {
+DummyTarget.prototype.addEventListener = function(name, callback, options) {
   if (typeof this.eventListenerCount[name] !== "number") {
     this.eventListenerCount[name] = 0;
   }
   this.eventListenerCount[name]++;
   this.eventListeners[name] = callback;
+  this.eventListenerOptions[name] = options;
 };
 DummyTarget.prototype.removeEventListener = function(name, callback) {
   if (this.eventListeners[name] !== callback) return;
   this.eventListenerCount[name]--;
   delete this.eventListeners[name];
+  delete this.eventListenerOptions[name];
+};
+
+// Target that uses legacy IE attachEvent/detachEvent API
+const LegacyTarget = function() {
+  this.eventListenerCount = {};
+  this.eventListeners = {};
+};
+LegacyTarget.prototype.attachEvent = function(name, callback) {
+  // IE uses 'onclick' format
+  const eventName = name.replace(/^on/, '');
+  if (typeof this.eventListenerCount[eventName] !== "number") {
+    this.eventListenerCount[eventName] = 0;
+  }
+  this.eventListenerCount[eventName]++;
+  this.eventListeners[eventName] = callback;
+};
+LegacyTarget.prototype.detachEvent = function(name, callback) {
+  const eventName = name.replace(/^on/, '');
+  if (this.eventListeners[eventName] !== callback) return;
+  this.eventListenerCount[eventName]--;
+  delete this.eventListeners[eventName];
 };
 
 class DummyComponent extends React.Component {
@@ -312,6 +336,217 @@ describe('react-document-events', function () {
         root.render(<DummyComponent target={target} onMouseOver={() => {}} />);
       });
       expect(target.eventListenerCount).to.deep.equal({ click: 1, mousedown: 0, mouseover: 1 });
+
+      act(() => {
+        root.unmount();
+      });
+    });
+
+    it("should pass capture option to addEventListener (fallback mode)", () => {
+      // In JSDOM, passive event listeners are not supported, so the component
+      // falls back to passing just the capture boolean as the third argument
+      const target = new DummyTarget();
+      const container = document.createElement("div");
+      const root = createRoot(container);
+      act(() => {
+        root.render(
+          <ReactDocumentEvents target={target} capture={true} onClick={() => {}} />
+        );
+      });
+      // When passive is not supported, options is just the capture boolean
+      expect(target.eventListenerOptions.click).to.equal(true);
+      act(() => {
+        root.unmount();
+      });
+    });
+
+    it("should default capture to false", () => {
+      const target = new DummyTarget();
+      const container = document.createElement("div");
+      const root = createRoot(container);
+      act(() => {
+        root.render(
+          <ReactDocumentEvents target={target} onClick={() => {}} />
+        );
+      });
+      // Default capture is false
+      expect(target.eventListenerOptions.click).to.equal(false);
+      act(() => {
+        root.unmount();
+      });
+    });
+
+    it("should handle multiple event types simultaneously", () => {
+      const target = new DummyTarget();
+      const container = document.createElement("div");
+      const root = createRoot(container);
+      const calls = [];
+      act(() => {
+        root.render(
+          <ReactDocumentEvents
+            target={target}
+            onClick={() => calls.push('click')}
+            onKeyDown={() => calls.push('keydown')}
+            onMouseMove={() => calls.push('mousemove')}
+          />
+        );
+      });
+      expect(target.eventListenerCount).to.deep.equal({ click: 1, keydown: 1, mousemove: 1 });
+
+      // Trigger all events
+      target.eventListeners.click();
+      target.eventListeners.keydown();
+      target.eventListeners.mousemove();
+      expect(calls).to.deep.equal(['click', 'keydown', 'mousemove']);
+
+      act(() => {
+        root.unmount();
+      });
+      expect(target.eventListenerCount).to.deep.equal({ click: 0, keydown: 0, mousemove: 0 });
+    });
+
+    it("should rebind handlers when handler keys change and target differs", () => {
+      // The component rebinds when the set of prop keys changes.
+      // When that happens, it unbinds from prevProps (old target) and binds to new props (new target)
+      const target1 = new DummyTarget();
+      const target2 = new DummyTarget();
+      const container = document.createElement("div");
+      const root = createRoot(container);
+
+      act(() => {
+        root.render(<ReactDocumentEvents target={target1} onClick={() => {}} />);
+      });
+      expect(target1.eventListenerCount).to.deep.equal({ click: 1 });
+      expect(target2.eventListenerCount).to.deep.equal({});
+
+      // Switch targets AND add a new handler (triggers rebind due to key change)
+      act(() => {
+        root.render(<ReactDocumentEvents target={target2} onClick={() => {}} onKeyDown={() => {}} />);
+      });
+      expect(target1.eventListenerCount).to.deep.equal({ click: 0 });
+      expect(target2.eventListenerCount).to.deep.equal({ click: 1, keydown: 1 });
+
+      act(() => {
+        root.unmount();
+      });
+    });
+
+    it("should handle removing a handler in update", () => {
+      const target = new DummyTarget();
+      const container = document.createElement("div");
+      const root = createRoot(container);
+
+      act(() => {
+        root.render(
+          <ReactDocumentEvents target={target} onClick={() => {}} onKeyDown={() => {}} />
+        );
+      });
+      expect(target.eventListenerCount).to.deep.equal({ click: 1, keydown: 1 });
+
+      // Remove onKeyDown handler - triggers rebind because keys changed
+      act(() => {
+        root.render(
+          <ReactDocumentEvents target={target} onClick={() => {}} />
+        );
+      });
+      // After rebind: old handlers removed, new handlers added
+      expect(target.eventListenerCount).to.deep.equal({ click: 1, keydown: 0 });
+      expect(target.eventListeners.click).to.be.a('function');
+      expect(target.eventListeners.keydown).to.be.undefined;
+
+      act(() => {
+        root.unmount();
+      });
+    });
+
+    it("should use attachEvent/detachEvent when addEventListener not available", () => {
+      const target = new LegacyTarget();
+      const container = document.createElement("div");
+      const root = createRoot(container);
+
+      act(() => {
+        root.render(<ReactDocumentEvents target={target} onClick={() => {}} />);
+      });
+      expect(target.eventListenerCount).to.deep.equal({ click: 1 });
+
+      act(() => {
+        root.unmount();
+      });
+      expect(target.eventListenerCount).to.deep.equal({ click: 0 });
+    });
+
+    it("should handle rapid enable/disable toggling without leaking listeners", () => {
+      const target = new DummyTarget();
+      const container = document.createElement("div");
+      const root = createRoot(container);
+      let component;
+
+      act(() => {
+        root.render(
+          <ParentComponent target={target} ref={(c) => { component = c; }} />
+        );
+      });
+      expect(target.eventListenerCount).to.deep.equal({ click: 1 });
+
+      // Rapidly toggle enabled state
+      for (let i = 0; i < 10; i++) {
+        act(() => {
+          component.setState({ enabled: false });
+        });
+        act(() => {
+          component.setState({ enabled: true });
+        });
+      }
+
+      // Should still have exactly 1 listener
+      expect(target.eventListenerCount).to.deep.equal({ click: 1 });
+
+      // Disable and verify cleanup
+      act(() => {
+        component.setState({ enabled: false });
+      });
+      expect(target.eventListenerCount).to.deep.equal({ click: 0 });
+
+      act(() => {
+        root.unmount();
+      });
+    });
+
+    it("should not bind handlers when initially disabled", () => {
+      const target = new DummyTarget();
+      const container = document.createElement("div");
+      const root = createRoot(container);
+
+      act(() => {
+        root.render(
+          <ReactDocumentEvents target={target} enabled={false} onClick={() => {}} />
+        );
+      });
+      expect(target.eventListenerCount).to.deep.equal({});
+
+      act(() => {
+        root.unmount();
+      });
+    });
+
+    it("should bind handlers when enabled changes from false to true", () => {
+      const target = new DummyTarget();
+      const container = document.createElement("div");
+      const root = createRoot(container);
+
+      act(() => {
+        root.render(
+          <ReactDocumentEvents target={target} enabled={false} onClick={() => {}} />
+        );
+      });
+      expect(target.eventListenerCount).to.deep.equal({});
+
+      act(() => {
+        root.render(
+          <ReactDocumentEvents target={target} enabled={true} onClick={() => {}} />
+        );
+      });
+      expect(target.eventListenerCount).to.deep.equal({ click: 1 });
 
       act(() => {
         root.unmount();
