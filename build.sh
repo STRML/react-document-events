@@ -1,5 +1,9 @@
 #!/bin/bash -ex
 rm -rf ./build
 
-# Simple babel run
-./node_modules/.bin/babel --out-dir ./build ./src
+# Build with esbuild
+./node_modules/.bin/esbuild src/*.jsx src/*.js \
+  --outdir=build \
+  --format=cjs \
+  --target=node20 \
+  --platform=node

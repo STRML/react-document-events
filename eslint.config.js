@@ -1,4 +1,3 @@
-const babelParser = require("@babel/eslint-parser");
 const js = require("@eslint/js");
 const globals = require("globals");
 
@@ -6,11 +5,11 @@ module.exports = [
   js.configs.recommended,
   {
     languageOptions: {
-      parser: babelParser,
+      ecmaVersion: 2022,
+      sourceType: "commonjs",
       parserOptions: {
-        requireConfigFile: false,
-        babelOptions: {
-          presets: ["@babel/preset-react"]
+        ecmaFeatures: {
+          jsx: true
         }
       },
       globals: {
