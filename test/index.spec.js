@@ -3,9 +3,10 @@
 const ReactDocumentEvents = require('../src/ReactDocumentEvents');
 const expect = require('chai').expect;
 const React = require('react');
-const ReactDOM = require('react-dom');
+const {createRoot} = require('react-dom/client');
 const ReactDOMServer = require('react-dom/server');
 const {JSDOM} = require('jsdom');
+const {act} = require('react');
 
 const DummyTarget = function() {
   this.eventListenerCount = {};
@@ -109,39 +110,62 @@ describe('react-document-events', function () {
     it('should assign a listener when mounted', function () {
       const target = new DummyTarget();
       const container = document.createElement('div');
-      ReactDOM.render(React.createElement(DummyComponent, {
-        target: target
-      }), container);
+      const root = createRoot(container);
+      act(() => {
+        root.render(React.createElement(DummyComponent, {
+          target: target
+        }));
+      });
       expect(target.eventListenerCount).to.deep.equal({click: 1});
-      ReactDOM.unmountComponentAtNode(container);
+      act(() => {
+        root.unmount();
+      });
       expect(target.eventListenerCount).to.deep.equal({click: 0});
     });
 
     it('should assign a listener to a target returned by a function', function () {
       const target = new DummyTarget();
       const container = document.createElement('div');
-      ReactDOM.render(React.createElement(DummyComponent, {
-        target() { return target; }
-      }), container);
+      const root = createRoot(container);
+      act(() => {
+        root.render(React.createElement(DummyComponent, {
+          target() { return target; }
+        }));
+      });
       expect(target.eventListenerCount).to.deep.equal({click: 1});
-      ReactDOM.unmountComponentAtNode(container);
+      act(() => {
+        root.unmount();
+      });
       expect(target.eventListenerCount).to.deep.equal({click: 0});
     });
 
     it('should attach/unattach listener when enabled/disabled', function () {
       const target = new DummyTarget();
       const container = document.createElement('div');
-      const component = ReactDOM.render(React.createElement(ParentComponent, {
-        target: target
-      }), container);
+      const root = createRoot(container);
+      let component;
+      act(() => {
+        root.render(React.createElement(ParentComponent, {
+          target: target,
+          ref: (c) => { component = c; }
+        }));
+      });
       expect(target.eventListenerCount).to.deep.equal({click: 1});
-      component.setState({enabled: false});
+      act(() => {
+        component.setState({enabled: false});
+      });
       expect(target.eventListenerCount).to.deep.equal({click: 0});
-      component.setState({enabled: true});
+      act(() => {
+        component.setState({enabled: true});
+      });
       expect(target.eventListenerCount).to.deep.equal({click: 1});
-      component.setState({enabled: false});
+      act(() => {
+        component.setState({enabled: false});
+      });
       expect(target.eventListenerCount).to.deep.equal({click: 0});
-      ReactDOM.unmountComponentAtNode(container);
+      act(() => {
+        root.unmount();
+      });
       // Expected another 'removeListener' call - this is okay, it's a noop.
       // Count should equal 0 because the function is gone.
       expect(target.eventListenerCount).to.deep.equal({click: 0});
@@ -160,9 +184,15 @@ describe('react-document-events', function () {
       const _warn = console.warn;
       let called = false;
       console.warn = function() { called = true; };
-      ReactDOM.render(React.createElement(BadComponent), container);
+      const root = createRoot(container);
+      act(() => {
+        root.render(React.createElement(BadComponent));
+      });
       expect(called).to.equal(true);
       console.warn = _warn;
+      act(() => {
+        root.unmount();
+      });
     });
 
     it('Should not warn when attaching window events to window', function () {
@@ -178,21 +208,36 @@ describe('react-document-events', function () {
       const _warn = console.warn;
       let called = false;
       console.warn = function() { called = true; };
-      ReactDOM.render(React.createElement(GoodComponent), container);
+      const root = createRoot(container);
+      act(() => {
+        root.render(React.createElement(GoodComponent));
+      });
       expect(called).to.equal(false);
       console.warn = _warn;
+      act(() => {
+        root.unmount();
+      });
     });
 
     it('Should automatically set `target`', function () {
-      const renderedComponent = ReactDOM.render(
-        <DummyComponent />, document.createElement('div')
-      );
+      const container = document.createElement('div');
+      let renderedComponent;
+      const root = createRoot(container);
+      act(() => {
+        root.render(
+          <DummyComponent ref={(c) => { renderedComponent = c; }} />
+        );
+      });
       const docEvents = renderedComponent.getDocumentEvents();
       expect(docEvents.getTarget()).to.equal(global.document);
+      act(() => {
+        root.unmount();
+      });
     });
 
     it('Should automatically get correct `target` in a new window', function () {
       const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>');
+      const {createPortal} = require('react-dom');
       class WindowHoister extends React.Component {
         state = {mounted: false};
         componentDidMount() {
@@ -205,17 +250,23 @@ describe('react-document-events', function () {
         }
         render() {
           if (!this.state.mounted) return null;
-          return ReactDOM.createPortal(this.props.children, this.containerEl);
+          return createPortal(this.props.children, this.containerEl);
         }
       }
 
       let renderedComponent;
-      ReactDOM.render(
-        <WindowHoister><DummyComponent ref={(c) => { renderedComponent = c; }}/></WindowHoister>,
-        document.createElement('div')
-      );
+      const container = document.createElement('div');
+      const root = createRoot(container);
+      act(() => {
+        root.render(
+          <WindowHoister><DummyComponent ref={(c) => { renderedComponent = c; }}/></WindowHoister>
+        );
+      });
       const docEvents = renderedComponent.getDocumentEvents();
       expect(docEvents.getTarget()).to.equal(dom.window.document);
+      act(() => {
+        root.unmount();
+      });
     });
 
     it("calls the latest listener passed in", () => {
@@ -226,30 +277,45 @@ describe('react-document-events', function () {
         correctOnClickHandlerCalled = true;
       };
       const container = document.createElement("div");
-      ReactDOM.render(<DummyComponent target={target} onClick={firstOnClick} />, container);
+      let component;
+      const root = createRoot(container);
+      act(() => {
+        root.render(<DummyComponent target={target} onClick={firstOnClick} ref={(c) => { component = c; }} />);
+      });
       target.eventListeners.click();
       expect(correctOnClickHandlerCalled).to.equal(false);
 
       // This doesn't look like a rerender of the same component, but it is - key hasn't changed so it's
       // not a full remount
-      const component = ReactDOM.render(<DummyComponent target={target} onClick={secondOnClick} />, container);
+      act(() => {
+        root.render(<DummyComponent target={target} onClick={secondOnClick} ref={(c) => { component = c; }} />);
+      });
       target.eventListeners.click();
       expect(component.renderCount).to.equal(2);
       expect(correctOnClickHandlerCalled).to.equal(true);
 
-      ReactDOM.unmountComponentAtNode(container);
+      act(() => {
+        root.unmount();
+      });
     });
 
     it("can add or remove listeners in updates", () => {
       const target = new DummyTarget();
       const container = document.createElement("div");
-      ReactDOM.render(<DummyComponent target={target} onMouseDown={() => {}} />, container);
+      const root = createRoot(container);
+      act(() => {
+        root.render(<DummyComponent target={target} onMouseDown={() => {}} />);
+      });
       expect(target.eventListenerCount).to.deep.equal({ click: 1, mousedown: 1 });
 
-      ReactDOM.render(<DummyComponent target={target} onMouseOver={() => {}} />, container);
+      act(() => {
+        root.render(<DummyComponent target={target} onMouseOver={() => {}} />);
+      });
       expect(target.eventListenerCount).to.deep.equal({ click: 1, mousedown: 0, mouseover: 1 });
 
-      ReactDOM.unmountComponentAtNode(container);
+      act(() => {
+        root.unmount();
+      });
     });
   });
 
