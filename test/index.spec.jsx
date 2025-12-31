@@ -1,6 +1,6 @@
 'use strict';
 /*eslint no-console: 0*/
-const ReactDocumentEvents = require('../src/ReactDocumentEvents');
+const ReactDocumentEvents = require('../src/ReactDocumentEvents.jsx');
 const expect = require('chai').expect;
 const React = require('react');
 const {createRoot} = require('react-dom/client');

@@ -12,10 +12,9 @@
   },
   "scripts": {
     "prepublishOnly": "npm run build",
-    "test": "mocha --require @babel/register",
-    "test:watch": "mocha --watch --require @babel/register",
-    "test:cov": "isparta cover ./node_modules/.bin/_mocha",
-    "lint": "eslint src/",
+    "test": "mocha --require tsx 'test/**/*.jsx'",
+    "test:watch": "mocha --watch --require tsx 'test/**/*.jsx'",
+    "lint": "eslint 'src/**/*.{js,jsx}'",
     "build": "bash build.sh",
     "preversion": "yarn test && git add CHANGELOG.md",
     "postversion": "git push --tags && yarn publish . --tag $npm_package_version && git push && echo \"Successfully released version $npm_package_version!\""
@@ -31,21 +30,16 @@
   },
   "homepage": "https://github.com/STRML/react-document-events#readme",
   "devDependencies": {
-    "@babel/cli": "^7.28.3",
-    "@babel/core": "^7.28.5",
-    "@babel/eslint-parser": "^7.28.5",
-    "@babel/plugin-transform-class-properties": "^7.27.1",
-    "@babel/preset-env": "^7.28.5",
-    "@babel/preset-react": "^7.28.5",
-    "@babel/register": "^7.28.3",
     "chai": "^6.2.2",
+    "esbuild": "^0.27.2",
     "eslint": "^9.39.2",
     "globals": "^16.5.0",
     "jsdom": "^27.4.0",
     "mocha": "^11.7.5",
     "pre-commit": "^1.2.2",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "tsx": "^4.21.0"
   },
   "peerDependencies": {
     "react": ">=16.8",
