@@ -34,8 +34,7 @@ class SideEffectingComponent extends React.Component {
 * **capture** (`boolean=false`): If true, will add listeners in the `capture` phase.
 * **enabled** (`boolean=true`): If true, will attach handlers, if false, will remove them. Safe to add/remove at will.
 * **passive** (`boolean=false`): If true, will add listeners with the
-  [passive option](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#Improving_scrolling_performance_with_passive_listeners),
-  if supported. A feature test is performed to ensure this does not accidentally set `useCapture`.
+  [passive option](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#Improving_scrolling_performance_with_passive_listeners).
 * **target** (`(HTMLElement | () => HTMLElement | () => void | void)=document`): The element to attach listeners to.
   May also be a function returning said element. If void, or returning void, this element will noop.
   * To be safe when server rendering, the default is `document`, but only if `process.browser` returns true.

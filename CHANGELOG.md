@@ -1,3 +1,25 @@
+## 2.0.0 (Dec 30, 2025)
+
+### Breaking Changes
+
+- **Node.js 20+ required** - Dropped support for Node.js < 20
+- **React 16.8+ required** - Dropped support for React < 16.8 (hooks era minimum)
+- **IE support removed** - Removed `attachEvent`/`detachEvent` fallbacks
+
+### Bug Fixes
+
+- Fixed handlers not rebinding when `target` prop changes without handler key changes
+
+### Internal
+
+- Replaced Babel with esbuild (~80x faster builds)
+- Migrated ESLint to v9 flat config
+- Updated all devDependencies to latest (React 19, Mocha 11, etc.)
+- Added GitHub Actions CI (Node 20, 22, 24)
+- Removed `SUPPORTS_PASSIVE` feature detection (all modern browsers support it)
+- Renamed source files to `.jsx` extension
+- Added `exports` field to package.json
+
 ## 1.5.1 (Feb 26, 2020)
 
 > This release contains a critical bugfix. 1.5.0 has been unpublished.
