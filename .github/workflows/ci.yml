@@ -12,7 +12,8 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18, 20, 22]
+        # jsdom 27 requires Node 20.19+ or 22.12+ or 24+
+        node-version: [20, 22, 24]
 
     steps:
       - uses: actions/checkout@v4
