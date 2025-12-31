@@ -405,9 +405,7 @@ describe('react-document-events', function () {
       expect(target.eventListenerCount).to.deep.equal({ click: 0, keydown: 0, mousemove: 0 });
     });
 
-    it("should rebind handlers when handler keys change and target differs", () => {
-      // The component rebinds when the set of prop keys changes.
-      // When that happens, it unbinds from prevProps (old target) and binds to new props (new target)
+    it("should rebind handlers when target changes", () => {
       const target1 = new DummyTarget();
       const target2 = new DummyTarget();
       const container = document.createElement("div");
@@ -419,12 +417,36 @@ describe('react-document-events', function () {
       expect(target1.eventListenerCount).to.deep.equal({ click: 1 });
       expect(target2.eventListenerCount).to.deep.equal({});
 
-      // Switch targets AND add a new handler (triggers rebind due to key change)
+      // Switch targets only (same handlers)
       act(() => {
-        root.render(<ReactDocumentEvents target={target2} onClick={() => {}} onKeyDown={() => {}} />);
+        root.render(<ReactDocumentEvents target={target2} onClick={() => {}} />);
       });
       expect(target1.eventListenerCount).to.deep.equal({ click: 0 });
-      expect(target2.eventListenerCount).to.deep.equal({ click: 1, keydown: 1 });
+      expect(target2.eventListenerCount).to.deep.equal({ click: 1 });
+
+      act(() => {
+        root.unmount();
+      });
+      expect(target2.eventListenerCount).to.deep.equal({ click: 0 });
+    });
+
+    it("should rebind handlers when target function returns different value", () => {
+      const target1 = new DummyTarget();
+      const target2 = new DummyTarget();
+      const container = document.createElement("div");
+      const root = createRoot(container);
+
+      act(() => {
+        root.render(<ReactDocumentEvents target={() => target1} onClick={() => {}} />);
+      });
+      expect(target1.eventListenerCount).to.deep.equal({ click: 1 });
+
+      // Switch to a function returning a different target
+      act(() => {
+        root.render(<ReactDocumentEvents target={() => target2} onClick={() => {}} />);
+      });
+      expect(target1.eventListenerCount).to.deep.equal({ click: 0 });
+      expect(target2.eventListenerCount).to.deep.equal({ click: 1 });
 
       act(() => {
         root.unmount();

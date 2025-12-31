@@ -30,10 +30,13 @@ class DocumentEvents extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (Object.keys(this.props).sort().toString() !== Object.keys(prevProps).sort().toString()) {
-      // Handlers passed in likely changed. Rebind.
+    const keysChanged = Object.keys(this.props).sort().toString() !== Object.keys(prevProps).sort().toString();
+    const targetChanged = this.getTarget(prevProps) !== this.getTarget(this.props);
+
+    if (keysChanged || targetChanged) {
+      // Handlers or target changed. Rebind.
       this.unbindHandlers(prevProps);
-      this.bindHandlers(this.props);
+      if (this.props.enabled) this.bindHandlers(this.props);
     } else if (!prevProps.enabled && this.props.enabled) {
       // We became enabled
       this.bindHandlers(this.props);
