@@ -84,10 +84,7 @@ class DocumentEvents extends React.Component {
   _adjustHandlers(fn, props) {
     const target = this.getTarget(props);
     if (!target) return;
-    // If `passive` is not supported, the third param is `useCapture`, which is a bool - and we won't
-    // be able to use passive at all. Otherwise, it's safe to use an object.
-    // eslint-disable-next-line no-use-before-define
-    const options = SUPPORTS_PASSIVE ? {passive: props.passive, capture: props.capture} : props.capture;
+    const options = {passive: props.passive, capture: props.capture};
     this.getKeys(props).forEach(([eventHandlerName, eventName]) => {
       // Note that this is a function that looks up the latest handler on `this.props`.
       // This ensures that if the function in `props` changes, the most recent handler will
@@ -110,27 +107,12 @@ class DocumentEvents extends React.Component {
 }
 
 function on(element, event, callback, options) {
-  !element.addEventListener && (event = 'on' + event);
-  (element.addEventListener || element.attachEvent).call(element, event, callback, options);
-  return callback;
+  element.addEventListener(event, callback, options);
 }
 
 function off(element, event, callback, options) {
-  !element.removeEventListener && (event = 'on' + event);
-  (element.removeEventListener || element.detachEvent).call(element, event, callback, options);
-  return callback;
+  element.removeEventListener(event, callback, options);
 }
-
-const SUPPORTS_PASSIVE = (function passiveFeatureTest() {
-  try {
-    let support = false;
-    // eslint-disable-next-line getter-return
-    document.createElement("div").addEventListener("test", function() {}, { get passive() { support = true; }});
-    return support;
-  } catch (e) {
-    return false;
-  }
-})();
 
 // Generate and assign propTypes from all possible events
 if (NODE_ENV !== 'production') {
