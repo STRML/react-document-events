@@ -28,27 +28,6 @@ DummyTarget.prototype.removeEventListener = function(name, callback) {
   delete this.eventListenerOptions[name];
 };
 
-// Target that uses legacy IE attachEvent/detachEvent API
-const LegacyTarget = function() {
-  this.eventListenerCount = {};
-  this.eventListeners = {};
-};
-LegacyTarget.prototype.attachEvent = function(name, callback) {
-  // IE uses 'onclick' format
-  const eventName = name.replace(/^on/, '');
-  if (typeof this.eventListenerCount[eventName] !== "number") {
-    this.eventListenerCount[eventName] = 0;
-  }
-  this.eventListenerCount[eventName]++;
-  this.eventListeners[eventName] = callback;
-};
-LegacyTarget.prototype.detachEvent = function(name, callback) {
-  const eventName = name.replace(/^on/, '');
-  if (this.eventListeners[eventName] !== callback) return;
-  this.eventListenerCount[eventName]--;
-  delete this.eventListeners[eventName];
-};
-
 class DummyComponent extends React.Component {
   renderCount = 0;
   getDocumentEvents() {
@@ -342,9 +321,7 @@ describe('react-document-events', function () {
       });
     });
 
-    it("should pass capture option to addEventListener (fallback mode)", () => {
-      // In JSDOM, passive event listeners are not supported, so the component
-      // falls back to passing just the capture boolean as the third argument
+    it("should pass capture option to addEventListener", () => {
       const target = new DummyTarget();
       const container = document.createElement("div");
       const root = createRoot(container);
@@ -353,14 +330,28 @@ describe('react-document-events', function () {
           <ReactDocumentEvents target={target} capture={true} onClick={() => {}} />
         );
       });
-      // When passive is not supported, options is just the capture boolean
-      expect(target.eventListenerOptions.click).to.equal(true);
+      expect(target.eventListenerOptions.click).to.deep.equal({ passive: false, capture: true });
       act(() => {
         root.unmount();
       });
     });
 
-    it("should default capture to false", () => {
+    it("should pass passive option to addEventListener", () => {
+      const target = new DummyTarget();
+      const container = document.createElement("div");
+      const root = createRoot(container);
+      act(() => {
+        root.render(
+          <ReactDocumentEvents target={target} passive={true} onClick={() => {}} />
+        );
+      });
+      expect(target.eventListenerOptions.click).to.deep.equal({ passive: true, capture: false });
+      act(() => {
+        root.unmount();
+      });
+    });
+
+    it("should default capture and passive to false", () => {
       const target = new DummyTarget();
       const container = document.createElement("div");
       const root = createRoot(container);
@@ -369,8 +360,7 @@ describe('react-document-events', function () {
           <ReactDocumentEvents target={target} onClick={() => {}} />
         );
       });
-      // Default capture is false
-      expect(target.eventListenerOptions.click).to.equal(false);
+      expect(target.eventListenerOptions.click).to.deep.equal({ passive: false, capture: false });
       act(() => {
         root.unmount();
       });
@@ -479,22 +469,6 @@ describe('react-document-events', function () {
       act(() => {
         root.unmount();
       });
-    });
-
-    it("should use attachEvent/detachEvent when addEventListener not available", () => {
-      const target = new LegacyTarget();
-      const container = document.createElement("div");
-      const root = createRoot(container);
-
-      act(() => {
-        root.render(<ReactDocumentEvents target={target} onClick={() => {}} />);
-      });
-      expect(target.eventListenerCount).to.deep.equal({ click: 1 });
-
-      act(() => {
-        root.unmount();
-      });
-      expect(target.eventListenerCount).to.deep.equal({ click: 0 });
     });
 
     it("should handle rapid enable/disable toggling without leaking listeners", () => {

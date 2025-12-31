@@ -3,8 +3,12 @@
   "version": "1.5.1",
   "description": "Declarative component for binding handlers to document and window - and cleaning them up.",
   "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
   "engines": {
-    "node": ">=4"
+    "node": ">=20"
   },
   "scripts": {
     "prepublishOnly": "npm run build",
@@ -44,8 +48,8 @@
     "react-dom": "^19.2.3"
   },
   "peerDependencies": {
-    "react": ">0.14",
-    "react-dom": ">0.14"
+    "react": ">=16.8",
+    "react-dom": ">=16.8"
   },
   "pre-commit": [
     "test",
