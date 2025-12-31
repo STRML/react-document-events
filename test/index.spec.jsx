@@ -1,5 +1,7 @@
 'use strict';
 /*eslint no-console: 0*/
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
 const ReactDocumentEvents = require('../src/ReactDocumentEvents.jsx');
 const expect = require('chai').expect;
 const React = require('react');
