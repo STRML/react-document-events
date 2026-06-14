@@ -31,7 +31,7 @@
   "homepage": "https://github.com/STRML/react-document-events#readme",
   "devDependencies": {
     "chai": "^6.2.2",
-    "esbuild": "^0.27.2",
+    "esbuild": "^0.28.1",
     "eslint": "^9.39.2",
     "globals": "^16.5.0",
     "jsdom": "^27.4.0",
