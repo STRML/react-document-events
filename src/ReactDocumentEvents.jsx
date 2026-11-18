@@ -56,7 +56,7 @@ class DocumentEvents extends React.Component {
     .filter((k) => k.slice(0, 2) === 'on')
     .map((k) => {
       if (NODE_ENV !== 'production' && EventKeys.windowEvents.indexOf(k) !== -1 && !isWindow) {
-        // eslint-disable-next-line
+        // oxlint-disable-next-line no-console
         console.warn("You attached the handler " + k + ", but this handler is only valid on the Window object.");
       }
       return [k, k.slice(2).toLowerCase()];
