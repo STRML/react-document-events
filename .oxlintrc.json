@@ -86,7 +86,8 @@
     "no-use-before-define": [
       "warn",
       "nofunc"
-    ]
+    ],
+    "no-undef": "error"
   },
   "ignorePatterns": [
     "build/**"
